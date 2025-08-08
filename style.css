@@ -297,3 +297,4 @@ main {
 .status-badge.in-progress { background-color: #ffc107; }
 .status-badge.to-do { background-color: #6c757d; }
 .status-badge.done { background-color: #28a745; }
+/* Fix to force Netlify deploy */
