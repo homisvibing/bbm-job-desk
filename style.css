@@ -298,3 +298,4 @@ main {
 .status-badge.to-do { background-color: #6c757d; }
 .status-badge.done { background-color: #28a745; }
 /* Fix to force Netlify deploy */
+/* Triggering final deployment */
