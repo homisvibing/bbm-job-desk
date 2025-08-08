@@ -1,7 +1,7 @@
-const { GoogleSpreadsheet } = require('google-spreadsheet');
+import { GoogleSpreadsheet } from 'google-spreadsheet';
 
 // Function to handle the login and data fetching
-exports.handler = async (event, context) => {
+export async function handler(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
@@ -17,8 +17,6 @@ exports.handler = async (event, context) => {
 
         // 1. Authenticate User
         const usersSheet = doc.sheetsByTitle['Users Data'];
-        await usersSheet.loadCells('A:C'); // Assuming username and password are in columns A and B
-
         const rows = await usersSheet.getRows();
         const user = rows.find(row => row.username === username && row.password === password);
 
@@ -50,7 +48,7 @@ exports.handler = async (event, context) => {
                 "Assigned By": task['Assigned By'],
             }));
 
-        // 3. Fetch Bulletin Board
+        // 3. Fetch Bulletin Board (and any other sheets)
         const bulletinSheet = doc.sheetsByTitle['Bulletin Board'];
         const bulletinRows = await bulletinSheet.getRows();
         const bulletinPosts = bulletinRows.map(post => ({
