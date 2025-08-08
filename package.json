@@ -2,15 +2,15 @@
   "name": "bbm-job-desk",
   "version": "1.0.0",
   "description": "",
-  "main": "script.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "google-spreadsheet": "^5.0.2"
-  }
+    "google-spreadsheet": "^4.1.1"  
+  },
+  "type": "module"
 }
