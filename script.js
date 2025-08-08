@@ -1,3 +1,4 @@
+// A new comment to force a deploy
 document.addEventListener('DOMContentLoaded', () => {
     // === Theme Toggle Logic ===
     const themeToggleBtn = document.getElementById('theme-icon');
