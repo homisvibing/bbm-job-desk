@@ -1,6 +1,20 @@
-import { GoogleSpreadsheet } from 'google-spreadsheet';
+import fetch from 'node-fetch';
 
-// Function to handle the login and data fetching
+const SPREADSHEET_ID = '1O5YchDeIuUnAKB9JJ88p44MjKYP86TIFannNxS9YwPY';
+const API_KEY = process.env.GOOGLE_API_KEY;
+
+const BASE_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/`;
+
+async function fetchSheet(range) {
+    const url = `${BASE_URL}${range}?key=${API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Error fetching data from sheet: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.values;
+}
+
 export async function handler(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
@@ -9,16 +23,9 @@ export async function handler(event) {
     try {
         const { username, password } = JSON.parse(event.body);
 
-        // Service account credentials from Netlify Environment Variables
-        const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_CREDS);
-        const doc = new GoogleSpreadsheet('1O5YchDeIuUnAKB9JJ88p44MjKYP86TIFannNxS9YwPY');
-        await doc.useServiceAccountAuth(creds);
-        await doc.loadInfo();
-
-        // 1. Authenticate User
-        const usersSheet = doc.sheetsByTitle['Users Data'];
-        const rows = await usersSheet.getRows();
-        const user = rows.find(row => row.username === username && row.password === password);
+        // 1. Fetch Users Data from the sheet
+        const usersData = await fetchSheet('Users Data!A2:C');
+        const user = usersData.find(row => row[0] === username && row[1] === password);
 
         if (!user) {
             return {
@@ -28,34 +35,28 @@ export async function handler(event) {
         }
 
         // 2. Fetch Tasks for the authenticated user
-        const tasksSheet = doc.sheetsByTitle['Task Tracker'];
-        const tasksRows = await tasksSheet.getRows();
-        const userTasks = tasksRows
-            .filter(task => task['Assigned To'] === username)
-            .map(task => ({
-                "Assigned To": task['Assigned To'],
-                "Task Name": task['Task Name'],
-                "Client Name": task['Client Name'],
-                "Status": task['Status'],
-                "End Date": task['End Date'],
-                "Priority": task['Priority'],
-                "Task Detail": task['Task Detail'],
-                "Campaign": task['Campaign'],
-                "Content Type": task['Content Type'],
-                "Brief": task['Brief'],
-                "Start Date": task['Start Date'],
-                "Note": task['Note'],
-                "Assigned By": task['Assigned By'],
-            }));
-
-        // 3. Fetch Bulletin Board (and any other sheets)
-        const bulletinSheet = doc.sheetsByTitle['Bulletin Board'];
-        const bulletinRows = await bulletinSheet.getRows();
-        const bulletinPosts = bulletinRows.map(post => ({
-            "Nickname": post['Nickname'],
-            "Post Date": post['Post Date'],
-            "Post Content": post['Post Content'],
-        }));
+        const tasksData = await fetchSheet('Task Tracker!A2:N');
+        const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
+        const userTasks = tasksData
+            .filter(row => row[0] === username)
+            .map(row => {
+                const task = {};
+                tasksHeaders.forEach((header, index) => {
+                    task[header] = row[index];
+                });
+                return task;
+            });
+            
+        // 3. Fetch Bulletin Board posts
+        const bulletinData = await fetchSheet('Bulletin Board!A2:C');
+        const bulletinHeaders = ['Nickname', 'Post Date', 'Post Content'];
+        const bulletinPosts = bulletinData.map(row => {
+            const post = {};
+            bulletinHeaders.forEach((header, index) => {
+                post[header] = row[index];
+            });
+            return post;
+        });
 
         return {
             statusCode: 200,
@@ -65,7 +66,6 @@ export async function handler(event) {
                 bulletin: bulletinPosts
             })
         };
-
     } catch (error) {
         console.error('Function error:', error);
         return {
@@ -73,4 +73,4 @@ export async function handler(event) {
             body: JSON.stringify({ error: 'Internal server error' })
         };
     }
-};
+}
