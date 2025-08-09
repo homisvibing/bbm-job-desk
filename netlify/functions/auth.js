@@ -42,7 +42,8 @@ export async function handler(event) {
         
         // This is the key change to prevent the TypeError
         const userTasks = (tasksData || [])
-            .filter(row => row && row[0] && row[0].split(',').map(email => email.trim().toLowerCase()).includes(userEmail.toLowerCase()))
+            .filter(row => Array.isArray(row) && row[0] !== undefined && row[0] !== null && row[0].trim() !== '')
+            .filter(row => row[0].split(',').map(email => email.trim().toLowerCase()).includes(userEmail.toLowerCase()))
             .map(row => {
                 const task = {};
                 tasksHeaders.forEach((header, index) => {
