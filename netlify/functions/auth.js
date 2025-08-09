@@ -25,12 +25,6 @@ export async function handler(event) {
 
         // 1. Fetch Users Data from the sheet
         const usersData = await fetchSheet('Users Data!A2:D');
-        if (!usersData) {
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ error: 'Failed to fetch user data.' })
-            };
-        }
         const user = usersData.find(row => row[0] === username && row[1] === password);
 
         if (!user) {
@@ -42,27 +36,28 @@ export async function handler(event) {
         
         const userEmail = user[3];
 
+        if (!userEmail) {
+             return {
+                statusCode: 401,
+                body: JSON.stringify({ error: 'User email not found in sheet. Please add an email address to your row in the Users Data sheet.' })
+            };
+        }
+
         // 2. Fetch Tasks for the authenticated user
         const tasksData = await fetchSheet('Task Tracker!A2:N');
         const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
         
-        const userTasks = [];
-        if (tasksData) {
-            for (const row of tasksData) {
-                // This is the bulletproof check to prevent the TypeError
-                if (Array.isArray(row) && row.length > 0 && typeof row[0] === 'string' && row[0].trim() !== '') {
-                    const assignedEmails = row[0].split(',').map(email => email.trim().toLowerCase());
-                    if (assignedEmails.includes(userEmail.toLowerCase())) {
-                        const task = {};
-                        tasksHeaders.forEach((header, index) => {
-                            task[header] = row[index];
-                        });
-                        userTasks.push(task);
-                    }
-                }
-            }
-        }
-        
+        const userTasks = (tasksData || [])
+            .filter(row => Array.isArray(row) && row[0] && row[0].trim() !== '')
+            .filter(row => row[0].split(',').map(email => email.trim().toLowerCase()).includes(userEmail.toLowerCase()))
+            .map(row => {
+                const task = {};
+                tasksHeaders.forEach((header, index) => {
+                    task[header] = row[index];
+                });
+                return task;
+            });
+            
         // 3. Fetch Bulletin Board posts
         const bulletinData = await fetchSheet('Bulletin Board!A2:C');
         const bulletinHeaders = ['Nickname', 'Post Date', 'Post Content'];
