@@ -34,14 +34,13 @@ export async function handler(event) {
             };
         }
         
-        // Use the email field to link tasks
         const userEmail = user[3];
 
         // 2. Fetch Tasks for the authenticated user
         const tasksData = await fetchSheet('Task Tracker!A2:N');
         const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
         const userTasks = tasksData
-            .filter(row => row[0] === userEmail)
+            .filter(row => row[0].split(',').map(email => email.trim()).includes(userEmail))
             .map(row => {
                 const task = {};
                 tasksHeaders.forEach((header, index) => {
