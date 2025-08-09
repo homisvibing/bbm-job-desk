@@ -7,10 +7,16 @@ const BASE_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID
 
 async function fetchSheet(range) {
     const url = `${BASE_URL}${range}?key=${API_KEY}`;
+    console.log('Fetching URL:', url); // Log the full API URL
     const response = await fetch(url);
+
+    // Add detailed error logging
     if (!response.ok) {
+        console.error(`API response status: ${response.status}`);
+        console.error(`API response text: ${await response.text()}`);
         throw new Error(`Error fetching data from sheet: ${response.statusText}`);
     }
+
     const data = await response.json();
     return data.values;
 }
@@ -25,6 +31,9 @@ export async function handler(event) {
 
         // 1. Fetch Users Data from the sheet
         const usersData = await fetchSheet('Users Data!A2:C');
+        if (!usersData) {
+            throw new Error('No data found in Users Data sheet');
+        }
         const user = usersData.find(row => row[0] === username && row[1] === password);
 
         if (!user) {
@@ -36,6 +45,9 @@ export async function handler(event) {
 
         // 2. Fetch Tasks for the authenticated user
         const tasksData = await fetchSheet('Task Tracker!A2:N');
+        if (!tasksData) {
+            throw new Error('No data found in Task Tracker sheet');
+        }
         const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
         const userTasks = tasksData
             .filter(row => row[0] === username)
@@ -46,9 +58,12 @@ export async function handler(event) {
                 });
                 return task;
             });
-            
+
         // 3. Fetch Bulletin Board posts
         const bulletinData = await fetchSheet('Bulletin Board!A2:C');
+        if (!bulletinData) {
+             throw new Error('No data found in Bulletin Board sheet');
+        }
         const bulletinHeaders = ['Nickname', 'Post Date', 'Post Content'];
         const bulletinPosts = bulletinData.map(row => {
             const post = {};
