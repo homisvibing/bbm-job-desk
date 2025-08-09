@@ -40,9 +40,8 @@ export async function handler(event) {
         const tasksData = await fetchSheet('Task Tracker!A2:N');
         const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
         
-        // This is the new, more robust filter
         const userTasks = (tasksData || [])
-            .filter(row => row && row[0] && typeof row[0] === 'string' && row[0].trim() !== '')
+            .filter(row => Array.isArray(row) && row[0] && row[0].trim() !== '')
             .filter(row => row[0].split(',').map(email => email.trim().toLowerCase()).includes(userEmail.toLowerCase()))
             .map(row => {
                 const task = {};
