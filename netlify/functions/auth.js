@@ -25,7 +25,12 @@ export async function handler(event) {
 
         // 1. Fetch Users Data from the sheet
         const usersData = await fetchSheet('Users Data!A2:D');
-        const user = usersData.find(row => row[0] === username && row[1] === password);
+        
+        // This is the key change: we trim and convert to lowercase for robust matching.
+        const user = usersData.find(row => 
+            row[0].trim().toLowerCase() === username.trim().toLowerCase() && 
+            row[1].trim().toLowerCase() === password.trim().toLowerCase()
+        );
 
         if (!user) {
             return {
