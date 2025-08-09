@@ -23,15 +23,24 @@ export async function handler(event) {
     try {
         const { username, password } = JSON.parse(event.body);
 
+        console.log('Login attempt with username:', username, 'and password:', password);
+
         // 1. Fetch Users Data from the sheet
         const usersData = await fetchSheet('Users Data!A2:D');
         
-        // This is the key change to handle spaces and case for both username and password
-        const user = usersData.find(row => 
-            row[0] && row[1] && // Check if row[0] and row[1] exist
-            row[0].trim().toLowerCase() === username.trim().toLowerCase() && 
-            row[1].trim().toLowerCase() === password.trim().toLowerCase()
-        );
+        const user = usersData.find(row => {
+            if (!row || !row[0] || !row[1]) return false;
+
+            const sheetUsername = row[0].trim().toLowerCase();
+            const sheetPassword = row[1].trim().toLowerCase();
+            const enteredUsername = username.trim().toLowerCase();
+            const enteredPassword = password.trim().toLowerCase();
+
+            // Log the values for debugging
+            console.log('Matching against:', 'username:', sheetUsername, 'password:', sheetPassword);
+            
+            return sheetUsername === enteredUsername && sheetPassword === enteredPassword;
+        });
 
         if (!user) {
             return {
@@ -40,10 +49,9 @@ export async function handler(event) {
             };
         }
         
-        // This line now correctly gets the email from column D (index 3)
         const userEmail = user[3];
 
-        if (!userEmail) {
+        if (!userEmail || userEmail.trim() === '') {
              return {
                 statusCode: 401,
                 body: JSON.stringify({ error: 'User email not found in sheet. Please add an email address to your row in the Users Data sheet.' })
