@@ -117,6 +117,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Post to bulletin board logic
+    const postForm = document.getElementById('bulletin-post-form');
+    if (postForm) {
+        postForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nickname = document.getElementById('post-nickname').value;
+            const content = document.getElementById('post-content').value;
+            const postStatus = document.getElementById('post-status');
+    
+            postStatus.textContent = 'Posting...';
+    
+            const response = await fetch('/.netlify/functions/post', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ nickname, content }),
+            });
+    
+            const result = await response.json();
+    
+            if (response.status === 200) {
+                postStatus.textContent = 'Posted successfully!';
+                postForm.reset();
+                // Re-fetch bulletin posts to show the new one
+                // (You'll need to re-run the login or create a new endpoint for this)
+            } else {
+                postStatus.textContent = `Error: ${result.error || 'Failed to post'}`;
+            }
+        });
+    }
+
     function showTaskModal(task) {
         const priorityClass = task.Priority ? `priority-${task.Priority.toLowerCase().replace(/\s/g, '')}` : 'priority-low';
         modalBody.innerHTML = `

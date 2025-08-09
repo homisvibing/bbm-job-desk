@@ -42,13 +42,26 @@
 
         <section id="bulletin-board" class="hidden">
             <h2>Bulletin Board</h2>
+            <div id="bulletin-post-container">
+                <h3>Post a thought</h3>
+                <form id="bulletin-post-form">
+                    <input type="text" id="post-nickname" placeholder="Your Nickname" required>
+                    <textarea id="post-content" placeholder="What's on your mind?" required></textarea>
+                    <button type="submit">Post</button>
+                    <p id="post-status" class="status-message"></p>
+                </form>
+            </div>
             <div id="bulletin-container">
             </div>
         </section>
 
         <section id="about-page" class="hidden">
             <h2>About BBM Job Desk</h2>
-            <p>This is a custom-built task management application for the team.</p>
+            <div class="credits">
+                <p>This project is a testament to what can be achieved through collaborative effort between human ingenuity and artificial intelligence.</p>
+                <p>Developed with passion by **Htet Oo Maung**</p>
+                <p>Powered by the assistance and expertise of **Google Gemini**</p>
+            </div>
         </section>
     </main>
 

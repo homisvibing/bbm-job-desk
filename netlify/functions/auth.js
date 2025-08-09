@@ -40,7 +40,7 @@ export async function handler(event) {
         const tasksData = await fetchSheet('Task Tracker!A2:N');
         const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
         const userTasks = tasksData
-            .filter(row => row[0].split(',').map(email => email.trim()).includes(userEmail))
+            .filter(row => row[0].split(',').map(email => email.trim().toLowerCase()).includes(userEmail.toLowerCase()))
             .map(row => {
                 const task = {};
                 tasksHeaders.forEach((header, index) => {
