@@ -49,7 +49,7 @@ export async function handler(event) {
         const userTasks = [];
         if (tasksData) {
             for (const row of tasksData) {
-                // Explicit checks to prevent any TypeError
+                // This is the bulletproof check to prevent the TypeError
                 if (Array.isArray(row) && row.length > 0 && typeof row[0] === 'string' && row[0].trim() !== '') {
                     const assignedEmails = row[0].split(',').map(email => email.trim().toLowerCase());
                     if (assignedEmails.includes(userEmail.toLowerCase())) {
