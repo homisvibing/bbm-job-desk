@@ -25,6 +25,12 @@ export async function handler(event) {
 
         // 1. Fetch Users Data from the sheet
         const usersData = await fetchSheet('Users Data!A2:D');
+        if (!usersData) {
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Failed to fetch user data.' })
+            };
+        }
         const user = usersData.find(row => row[0] === username && row[1] === password);
 
         if (!user) {
@@ -40,18 +46,23 @@ export async function handler(event) {
         const tasksData = await fetchSheet('Task Tracker!A2:N');
         const tasksHeaders = ['Assigned To', 'Task Name', 'Client Name', 'Status', 'End Date', 'Priority', 'Task Detail', 'Campaign', 'Content Type', 'Brief', 'Start Date', 'Note', 'Assigned By'];
         
-        // This is the new, completely robust filter to prevent all possible TypeErrors.
-        const userTasks = (tasksData || [])
-            .filter(row => Array.isArray(row) && row.length > 0 && typeof row[0] === 'string' && row[0].trim() !== '')
-            .filter(row => row[0].split(',').map(email => email.trim().toLowerCase()).includes(userEmail.toLowerCase()))
-            .map(row => {
-                const task = {};
-                tasksHeaders.forEach((header, index) => {
-                    task[header] = row[index];
-                });
-                return task;
-            });
-            
+        const userTasks = [];
+        if (tasksData) {
+            for (const row of tasksData) {
+                // Explicit checks to prevent any TypeError
+                if (Array.isArray(row) && row.length > 0 && typeof row[0] === 'string' && row[0].trim() !== '') {
+                    const assignedEmails = row[0].split(',').map(email => email.trim().toLowerCase());
+                    if (assignedEmails.includes(userEmail.toLowerCase())) {
+                        const task = {};
+                        tasksHeaders.forEach((header, index) => {
+                            task[header] = row[index];
+                        });
+                        userTasks.push(task);
+                    }
+                }
+            }
+        }
+        
         // 3. Fetch Bulletin Board posts
         const bulletinData = await fetchSheet('Bulletin Board!A2:C');
         const bulletinHeaders = ['Nickname', 'Post Date', 'Post Content'];
