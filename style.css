@@ -297,5 +297,9 @@ main {
 .status-badge.in-progress { background-color: #ffc107; }
 .status-badge.to-do { background-color: #6c757d; }
 .status-badge.done { background-color: #28a745; }
+/* Add to your style.css */
+.priority-done {
+    background-color: #28a745; /* A success green color */
+}
 /* Fix to force Netlify deploy */
 /* Triggering final deployment */

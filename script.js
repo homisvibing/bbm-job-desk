@@ -1,4 +1,3 @@
-// A new comment to force a deploy
 document.addEventListener('DOMContentLoaded', () => {
     // === Theme Toggle Logic ===
     const themeToggleBtn = document.getElementById('theme-icon');
@@ -22,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskModal = document.getElementById('task-modal');
     const modalBody = document.getElementById('modal-body');
     const closeButton = document.querySelector('.close-button');
+    const taskContainer = document.getElementById('task-container');
 
     const loginForm = document.getElementById('login-form');
     loginForm.addEventListener('submit', async (e) => {
@@ -34,97 +34,118 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch('/.netlify/functions/auth', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password }),
         });
 
-        const data = await response.json();
+        const result = await response.json();
 
-        if (response.ok) {
+        if (response.status === 200) {
             loginPage.classList.add('hidden');
+            mainNav.classList.remove('hidden');
             userDeskPage.classList.remove('hidden');
-            mainNav.classList.add('show');
-            document.getElementById('user-desk-link').textContent = `${username}'s Desk`;
-            
-            renderTasks(data.tasks); // Render tasks from the server response
+            renderTasks(result.tasks);
+            renderBulletin(result.bulletin);
         } else {
-            loginError.textContent = data.error;
+            loginError.textContent = result.error || 'Login failed. Please try again.';
         }
     });
 
-    // === Task Card Rendering and Click Logic ===
-    let allTasks = []; // To store tasks for modal
+    // Function to render tasks
     function renderTasks(tasks) {
-        allTasks = tasks; // Store tasks globally for the modal
-        const container = document.getElementById('task-container');
-        container.innerHTML = '';
-        
+        taskContainer.innerHTML = '';
+        if (!tasks || tasks.length === 0) {
+            taskContainer.innerHTML = '<p>No tasks assigned to you.</p>';
+            return;
+        }
+
+        // Sort tasks by priority: High, Low, Done
+        const priorityOrder = { 'High': 1, 'Low': 2, 'Done': 3 };
         tasks.sort((a, b) => {
-            const priorityA = a.Priority === 'High' ? 1 : 0;
-            const priorityB = b.Priority === 'High' ? 1 : 0;
-            return priorityB - priorityA;
+            const priorityA = priorityOrder[a.Priority] || 4;
+            const priorityB = priorityOrder[b.Priority] || 4;
+            return priorityA - priorityB;
         });
 
-        tasks.forEach((task, index) => {
-            const card = document.createElement('div');
-            card.className = 'task-card';
+        tasks.forEach(task => {
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('task-card');
+            
+            // Set priority class for styling
+            const priorityClass = task.Priority ? `priority-${task.Priority.toLowerCase().replace(/\s/g, '')}` : 'priority-low';
+            taskCard.classList.add(priorityClass);
 
-            const priority = task.Priority || 'Low';
-            const priorityClass = priority.toLowerCase();
-            const priorityIcon = `<i class="fas fa-flag"></i>`;
-
-            card.innerHTML = `
-                <div class="priority-flag priority-${priorityClass}">
-                    ${priorityIcon}
+            taskCard.innerHTML = `
+                <div class="card-header">
+                    <span class="priority-badge">${task.Priority || 'Low'}</span>
+                    <span class="status-badge">${task.Status}</span>
                 </div>
-                <h3>${task['Task Name']}</h3>
-                <p><strong>Assigned To:</strong> ${task['Assigned To']}</p>
-                <p><strong>Client:</strong> ${task['Client Name']}</p>
-                <p><strong>Status:</strong> ${task['Status']}</p>
-                <p><strong>Due Date:</strong> ${task['End Date']}</p>
+                <h3 class="card-title">${task['Task Name']}</h3>
+                <p class="card-client">Client: ${task['Client Name']}</p>
+                <p class="card-date">Due: ${task['End Date']}</p>
             `;
-            card.dataset.taskIndex = index;
-            container.appendChild(card);
+            taskContainer.appendChild(taskCard);
+
+            taskCard.addEventListener('click', () => {
+                showTaskModal(task);
+            });
         });
     }
 
-    // === Modal Logic ===
-    document.getElementById('task-container').addEventListener('click', (e) => {
-        const card = e.target.closest('.task-card');
-        if (card) {
-            const taskIndex = card.dataset.taskIndex;
-            const task = allTasks[taskIndex]; // Use the stored global array
-            
-            modalBody.innerHTML = `
-                <h3 class="modal-title">${task['Task Name']}</h3>
-                <hr>
-                <div class="modal-section">
-                    <h4><i class="fas fa-info-circle"></i> Task Details</h4>
-                    <p><strong>Client:</strong> ${task['Client Name']}</p>
-                    <p><strong>Campaign:</strong> ${task['Campaign']}</p>
-                    <p><strong>Content Type:</strong> ${task['Content Type']}</p>
-                    <p><strong>Brief:</strong> ${task['Brief']}</p>
-                    <p><strong>Note:</strong> ${task['Note']}</p>
-                    <p><strong>Assigned By:</strong> ${task['Assigned By']}</p>
+    // Function to render bulletin board
+    function renderBulletin(posts) {
+        const bulletinContainer = document.getElementById('bulletin-container');
+        bulletinContainer.innerHTML = '';
+        if (!posts || posts.length === 0) {
+            bulletinContainer.innerHTML = '<p>No new posts on the bulletin board.</p>';
+            return;
+        }
+        posts.forEach(post => {
+            const postCard = document.createElement('div');
+            postCard.classList.add('post-card');
+            postCard.innerHTML = `
+                <div class="post-meta">
+                    <span class="post-nickname">${post.Nickname}</span>
+                    <span class="post-date">${post['Post Date']}</span>
                 </div>
-                <hr>
-                <div class="modal-section">
-                    <h4><i class="fas fa-clock"></i> Timeline</h4>
-                    <p><strong>Start Date:</strong> ${task['Start Date']}</p>
-                    <p><strong>End Date:</strong> ${task['End Date']}</p>
-                </div>
-                <hr>
-                <div class="modal-section">
-                    <h4><i class="fas fa-check-circle"></i> Status</h4>
-                    <p><strong>Status:</strong> <span class="status-badge">${task['Status']}</span></p>
-                    <p><strong>Priority:</strong> <span class="priority-badge priority-${task.Priority ? task.Priority.toLowerCase() : 'low'}">${task.Priority || 'Low'}</span></p>
-                    <p><strong>Assigned To:</strong> ${task['Assigned To']}</p>
+                <div class="post-content">
+                    <p>${post['Post Content']}</p>
                 </div>
             `;
-            taskModal.style.display = 'flex';
-        }
-    });
+            bulletinContainer.appendChild(postCard);
+        });
+    }
+
+    function showTaskModal(task) {
+        const priorityClass = task.Priority ? `priority-${task.Priority.toLowerCase().replace(/\s/g, '')}` : 'priority-low';
+        modalBody.innerHTML = `
+            <div class="modal-header">
+                <h3 class="modal-title">${task['Task Name']}</h3>
+                <span class="priority-badge ${priorityClass}">${task.Priority || 'Low'}</span>
+            </div>
+            <div class="modal-section">
+                <h4><i class="fas fa-info-circle"></i> Details</h4>
+                <p><strong>Client:</strong> ${task['Client Name']}</p>
+                <p><strong>Campaign:</strong> ${task.Campaign}</p>
+                <p><strong>Content Type:</strong> ${task['Content Type']}</p>
+                <p><strong>Brief:</strong> ${task.Brief}</p>
+            </div>
+            <hr>
+            <div class="modal-section">
+                <h4><i class="fas fa-calendar-alt"></i> Timeline</h4>
+                <p><strong>Start Date:</strong> ${task['Start Date']}</p>
+                <p><strong>End Date:</strong> ${task['End Date']}</p>
+            </div>
+            <hr>
+            <div class="modal-section">
+                <h4><i class="fas fa-check-circle"></i> Status</h4>
+                <p><strong>Status:</strong> <span class="status-badge">${task.Status}</span></p>
+                <p><strong>Assigned To:</strong> ${task['Assigned To']}</p>
+            </div>
+        `;
+        taskModal.style.display = 'flex';
+    }
 
     closeButton.addEventListener('click', () => {
         taskModal.style.display = 'none';
@@ -146,7 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 section.classList.add('hidden');
             });
             
-            document.getElementById(targetId).classList.remove('hidden');
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
         });
     });
 });
