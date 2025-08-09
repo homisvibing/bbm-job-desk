@@ -28,6 +28,7 @@ export async function handler(event) {
         
         // This is the key change to handle spaces and case for both username and password
         const user = usersData.find(row => 
+            row[0] && row[1] && // Check if row[0] and row[1] exist
             row[0].trim().toLowerCase() === username.trim().toLowerCase() && 
             row[1].trim().toLowerCase() === password.trim().toLowerCase()
         );
@@ -39,6 +40,7 @@ export async function handler(event) {
             };
         }
         
+        // This line now correctly gets the email from column D (index 3)
         const userEmail = user[3];
 
         if (!userEmail) {
